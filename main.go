@@ -46,9 +46,9 @@ func main() {
 
 	p := pinger.State{StartedAt: time.Now().UTC(), Error: errStr}
 	lastPrint := time.Time{}
-	for range time.Tick(time.Second / 2) {
+	for range time.Tick(100 * time.Millisecond) {
 		ctx := context.Background()
-		ctx, cancel = context.WithTimeout(ctx, 1*time.Second)
+		ctx, cancel = context.WithTimeout(ctx, 200*time.Millisecond)
 		err = db.PingContext(ctx)
 		cancel()
 
@@ -56,8 +56,13 @@ func main() {
 		if next != p {
 			p.EndedAt = time.Now()
 			log.Println(p)
+			if p.Error != "" && err == nil {
+				log.Println("Connection is now up")
+			} else if p.Error == "" && err != nil {
+				log.Printf("Connection is now down, the latest error: %v", err)
+			}
 			p = next
-		} else if time.Since(lastPrint) > 10*time.Second {
+		} else if time.Since(lastPrint) > 30*time.Second {
 			log.Println(p)
 			lastPrint = time.Now().UTC()
 		}
